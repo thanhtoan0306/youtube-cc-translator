@@ -1,0 +1,239 @@
+:root {
+  color-scheme: dark;
+  --bg: #0f0f0f;
+  --card: #1a1a1a;
+  --border: #2a2a2a;
+  --text: #f1f1f1;
+  --muted: #9aa0a6;
+  --accent: #e62117;
+  --accent-soft: rgba(230, 33, 23, 0.15);
+  --success: #3ea55d;
+  --zh-font: "PingFang SC", "Microsoft YaHei", "Noto Sans SC", sans-serif;
+  --vi-font: "Segoe UI", "Noto Sans", sans-serif;
+  --caption-line-height: 30px;
+  --caption-viewport-height: 96px;
+  --roll-duration: 0.42s;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  min-height: 100vh;
+  background: var(--bg);
+  color: var(--text);
+  font: 14px/1.5 system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+}
+
+.header {
+  padding: 16px;
+  border-bottom: 1px solid var(--border);
+  background: linear-gradient(180deg, #171717, var(--bg));
+}
+
+.brand {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 14px;
+}
+
+.logo {
+  display: grid;
+  place-items: center;
+  width: 40px;
+  height: 40px;
+  border-radius: 10px;
+  background: var(--accent);
+  font: 700 18px/1 var(--zh-font);
+}
+
+h1 {
+  margin: 0;
+  font-size: 16px;
+}
+
+h2 {
+  margin: 0 0 10px;
+  font-size: 13px;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.subtitle {
+  margin: 2px 0 0;
+  color: var(--muted);
+  font-size: 12px;
+}
+
+.toggle-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  width: 100%;
+  padding: 12px 14px;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  background: var(--card);
+  color: var(--text);
+  font: 600 14px/1 system-ui, sans-serif;
+  cursor: pointer;
+  transition: background 0.15s ease, border-color 0.15s ease;
+}
+
+.toggle-btn[aria-pressed="true"] {
+  background: var(--accent-soft);
+  border-color: var(--accent);
+  color: #fff;
+}
+
+.toggle-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: var(--muted);
+}
+
+.toggle-btn[aria-pressed="true"] .toggle-dot {
+  background: var(--accent);
+  box-shadow: 0 0 8px var(--accent);
+}
+
+.status-card,
+.current-card {
+  margin: 12px;
+  padding: 14px;
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  background: var(--card);
+}
+
+.status-card {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+}
+
+.status-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--muted);
+}
+
+.status-dot.active {
+  background: var(--success);
+  box-shadow: 0 0 8px rgba(62, 165, 93, 0.6);
+}
+
+.caption-block + .caption-block {
+  margin-top: 12px;
+}
+
+.caption-block label {
+  display: block;
+  margin-bottom: 6px;
+  color: var(--muted);
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.caption-viewport {
+  height: var(--caption-viewport-height);
+  padding: 10px 12px;
+  border-radius: 10px;
+  background: #111;
+  overflow: hidden;
+  position: relative;
+}
+
+.caption-viewport.muted {
+  color: var(--muted);
+}
+
+.caption-track {
+  display: flex;
+  flex-direction: column;
+  transition: transform var(--roll-duration) cubic-bezier(0.4, 0, 0.2, 1);
+  will-change: transform;
+}
+
+.caption-track.shift {
+  transform: translateY(calc(-1 * var(--caption-line-height)));
+}
+
+.caption-line {
+  height: var(--caption-line-height);
+  line-height: var(--caption-line-height);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  opacity: 0.72;
+  transition: opacity 0.32s ease;
+}
+
+.caption-line[data-slot="1"].filled {
+  opacity: 0.88;
+}
+
+.caption-line[data-slot="2"].active {
+  opacity: 1;
+}
+
+.caption-line.fade-out {
+  opacity: 0 !important;
+}
+
+.caption-line.fade-in {
+  animation: line-fade-in 0.28s ease forwards;
+}
+
+@keyframes line-fade-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 0.88;
+  }
+}
+
+.caption-viewport.zh {
+  font: 16px/1 var(--zh-font);
+  color: #fff;
+}
+
+.caption-viewport.en {
+  font: 15px/1 system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+}
+
+.caption-viewport.vi {
+  font: 15px/1 var(--vi-font);
+}
+
+.caption-block.highlight .caption-viewport {
+  background: rgba(230, 33, 23, 0.08);
+  border: 1px solid rgba(230, 33, 23, 0.25);
+}
+
+.caption-block.accent-en .caption-viewport {
+  background: rgba(66, 133, 244, 0.08);
+  border: 1px solid rgba(66, 133, 244, 0.25);
+}
+
+.caption-block.accent-vi .caption-viewport {
+  background: rgba(52, 168, 83, 0.08);
+  border: 1px solid rgba(52, 168, 83, 0.25);
+}
+
+.footer {
+  padding: 0 16px 16px;
+  color: var(--muted);
+  font-size: 11px;
+  text-align: center;
+}
