@@ -9,62 +9,35 @@
   <body>
     <header class="header">
       <div class="brand">
-        <span class="logo">ZH</span>
+        <span class="logo">CC</span>
         <div>
           <h1>YouTube CC Translator</h1>
-          <p class="subtitle">Auto-translate to Chinese, English & Vietnamese</p>
+          <p class="subtitle">Synced with YouTube CC — 2 lines</p>
         </div>
       </div>
       <button id="toggleBtn" class="toggle-btn" type="button" aria-pressed="false">
         <span class="toggle-dot"></span>
-        <span id="toggleLabel">Enable Auto Translate</span>
+        <span id="toggleLabel">Enable CC Sync</span>
       </button>
     </header>
 
     <section class="status-card" id="statusCard">
       <span id="statusDot" class="status-dot"></span>
-      <span id="statusText">Auto translate is off</span>
+      <span id="statusText">CC sync is off</span>
     </section>
 
     <section class="current-card">
-      <h2>Current Caption</h2>
+      <h2>Live Caption</h2>
 
       <div class="caption-block">
-        <label>Original</label>
-        <div class="caption-viewport muted" data-rolling="original">
-          <div class="caption-line" data-slot="1"></div>
-          <div class="caption-line active" data-slot="2">Open a YouTube video and enable CC subtitles</div>
-        </div>
-      </div>
-
-      <div class="caption-block highlight">
-        <label>Simplified Chinese</label>
-        <div class="caption-viewport zh" data-rolling="zh">
-          <div class="caption-line" data-slot="1"></div>
-          <div class="caption-line" data-slot="2"></div>
-        </div>
-      </div>
-
-      <div class="caption-block accent-en">
-        <label>English</label>
-        <div class="caption-viewport en" data-rolling="en">
-          <div class="caption-line" data-slot="1"></div>
-          <div class="caption-line" data-slot="2"></div>
-        </div>
-      </div>
-
-      <div class="caption-block accent-vi">
-        <label>Vietnamese</label>
-        <div class="caption-viewport vi" data-rolling="vi">
-          <div class="caption-line" data-slot="1"></div>
-          <div class="caption-line" data-slot="2"></div>
+        <div class="caption-viewport yt-style muted" data-caption="original">
+          <p class="caption-line" data-line="1"></p>
+          <p class="caption-line active" data-line="2">Open a YouTube video and enable CC subtitles</p>
         </div>
       </div>
     </section>
 
-    <footer class="footer">
-      You can also use the Translate ZH button on the YouTube player controls
-    </footer>
+    <footer class="footer">Mirrors YouTube CC in real time</footer>
 
     <script src="sidepanel.js"></script>
   </body>

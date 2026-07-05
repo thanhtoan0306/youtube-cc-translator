@@ -1,6 +1,5 @@
 let autoTranslate = false;
 let lastSeenText = "";
-let lastEmittedText = "";
 let observer = null;
 
 init();
@@ -55,16 +54,25 @@ function readCaptionLines() {
     .filter(Boolean);
 }
 
-function readCurrentCaption() {
-  return readCaptionLines().join("\n");
+function toTwoLines(segments) {
+  const lines = (segments ?? []).map((line) => line.trim()).filter(Boolean);
+  if (!lines.length) return ["", ""];
+  if (lines.length === 1) return ["", lines[0]];
+  return [lines[lines.length - 2], lines[lines.length - 1]];
 }
 
 function handleCaptionChange() {
-  const lines = readCaptionLines();
-  const text = lines.join("\n");
+  const segments = readCaptionLines();
+  const twoLines = toTwoLines(segments);
+  const text = segments.join("\n");
 
-  if (!lines.length) {
-    lastSeenText = "";
+  if (!text) {
+    if (lastSeenText) {
+      lastSeenText = "";
+      if (autoTranslate) {
+        emitCaptionSync(["", ""], "");
+      }
+    }
     return;
   }
 
@@ -72,16 +80,13 @@ function handleCaptionChange() {
   lastSeenText = text;
 
   if (!autoTranslate) return;
-  emitCaption(lines);
+  emitCaptionSync(twoLines, text);
 }
 
-function emitCaption(lines) {
-  const key = lines.join("\n");
-  if (!key || key === lastEmittedText) return;
-  lastEmittedText = key;
+function emitCaptionSync(lines, text) {
   chrome.runtime.sendMessage({
-    type: "CAPTION_UPDATE",
-    payload: { lines, timestamp: Date.now() },
+    type: "CAPTION_SYNC",
+    payload: { lines, text, timestamp: Date.now() },
   });
 }
 
@@ -126,7 +131,7 @@ function injectCcButton() {
   const btn = document.createElement("button");
   btn.id = "ycc-translate-btn";
   btn.type = "button";
-  btn.title = "Auto translate captions to Simplified Chinese";
+  btn.title = "Sync captions to side panel";
   updateInjectedButtonLabel(btn);
 
   btn.addEventListener("click", async () => {
@@ -137,9 +142,11 @@ function injectCcButton() {
     updateInjectedButtonLabel(btn);
 
     if (autoTranslate) {
-      const lines = readCaptionLines();
-      if (lines.length) {
-        emitCaption(lines);
+      const segments = readCaptionLines();
+      const twoLines = toTwoLines(segments);
+      const text = segments.join("\n");
+      if (text) {
+        emitCaptionSync(twoLines, text);
       }
     }
   });
@@ -151,7 +158,7 @@ function injectCcButton() {
 
 function updateInjectedButtonLabel(btn = document.getElementById("ycc-translate-btn")) {
   if (!btn) return;
-  btn.textContent = autoTranslate ? "Translate ZH ON" : "Translate ZH";
+  btn.textContent = autoTranslate ? "CC Sync ON" : "CC Sync";
 }
 
 function updateCcButtonState() {

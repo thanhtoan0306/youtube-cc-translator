@@ -10,9 +10,8 @@
   --success: #3ea55d;
   --zh-font: "PingFang SC", "Microsoft YaHei", "Noto Sans SC", sans-serif;
   --vi-font: "Segoe UI", "Noto Sans", sans-serif;
-  --caption-line-height: 30px;
-  --caption-viewport-height: 96px;
-  --roll-duration: 0.42s;
+  --caption-line-height: 28px;
+  --caption-viewport-height: 76px;
 }
 
 * {
@@ -147,14 +146,19 @@ h2 {
 .caption-viewport {
   height: var(--caption-viewport-height);
   padding: 10px 12px;
-  border-radius: 10px;
-  background: #111;
+  border-radius: 4px;
+  background: rgba(8, 8, 8, 0.82);
   overflow: hidden;
   position: relative;
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.06);
 }
 
-.caption-viewport.muted {
+.caption-viewport.muted .caption-line {
   color: var(--muted);
+}
+
+.caption-viewport.empty .caption-line {
+  opacity: 0.35;
 }
 
 .caption-line {
@@ -162,59 +166,38 @@ h2 {
   left: 12px;
   right: 12px;
   height: var(--caption-line-height);
+  margin: 0;
   line-height: var(--caption-line-height);
+  font-size: 15px;
+  font-weight: 500;
+  color: #fff;
+  text-align: center;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
-  transition: none;
-  contain: layout style;
 }
 
-.caption-line[data-slot="1"] {
+.caption-line[data-line="1"] {
   top: 10px;
   opacity: 0.88;
 }
 
-.caption-line[data-slot="2"] {
+.caption-line[data-line="2"] {
   top: calc(10px + var(--caption-line-height));
+}
+
+.caption-line.filled,
+.caption-line.active {
   opacity: 1;
 }
 
-.caption-line[data-slot="1"].fade-out {
-  transition: opacity 0.35s ease;
-  opacity: 0;
+.caption-viewport.zh .caption-line {
+  font-family: var(--zh-font);
+  font-size: 16px;
 }
 
-.caption-line[data-slot="1"].fade-in {
-  animation: line-fade-in 0.28s ease forwards;
-}
-
-.caption-line[data-slot="2"].slide-up {
-  transition: transform var(--roll-duration) cubic-bezier(0.4, 0, 0.2, 1);
-  transform: translateY(calc(-1 * var(--caption-line-height)));
-  z-index: 2;
-}
-
-@keyframes line-fade-in {
-  from {
-    opacity: 0;
-  }
-  to {
-    opacity: 0.88;
-  }
-}
-
-.caption-viewport.zh {
-  font: 16px/1 var(--zh-font);
-  color: #fff;
-}
-
-.caption-viewport.en {
-  font: 15px/1 system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-}
-
-.caption-viewport.vi {
-  font: 15px/1 var(--vi-font);
+.caption-viewport.vi .caption-line {
+  font-family: var(--vi-font);
 }
 
 .caption-block.highlight .caption-viewport {

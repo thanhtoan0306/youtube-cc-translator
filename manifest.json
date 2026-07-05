@@ -1,8 +1,8 @@
 {
   "manifest_version": 3,
   "name": "YouTube CC Translator",
-  "version": "1.0.0",
-  "description": "Auto-translate YouTube closed captions to Simplified Chinese, English, and Vietnamese in the side panel.",
+  "version": "1.2.2",
+  "description": "Mirror YouTube closed captions in the side panel — 2 lines synced in real time.",
   "permissions": ["storage", "sidePanel", "tabs"],
   "host_permissions": [
     "*://www.youtube.com/*",
