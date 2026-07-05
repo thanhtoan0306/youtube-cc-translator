@@ -130,7 +130,7 @@ h2 {
   box-shadow: 0 0 8px rgba(62, 165, 93, 0.6);
 }
 
-.caption-block + .caption-block {
+.caption-block + .caption-block:not(.pinyin-block) {
   margin-top: 12px;
 }
 
@@ -141,6 +141,19 @@ h2 {
   font-size: 11px;
   text-transform: uppercase;
   letter-spacing: 0.05em;
+}
+
+.caption-viewport.pinyin .caption-line {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  font-size: 14px;
+  font-weight: 400;
+  color: #f0c674;
+  letter-spacing: 0.02em;
+}
+
+.caption-block.pinyin-block .caption-viewport {
+  background: rgba(240, 198, 116, 0.06);
+  box-shadow: inset 0 0 0 1px rgba(240, 198, 116, 0.18);
 }
 
 .caption-viewport {
@@ -171,7 +184,7 @@ h2 {
   font-size: 15px;
   font-weight: 500;
   color: #fff;
-  text-align: center;
+  text-align: left;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;

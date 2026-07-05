@@ -32,11 +32,39 @@ function normalizeTwoLines(lines) {
   return ["", ""];
 }
 
+function resolveLines(linesOrText) {
+  if (Array.isArray(linesOrText)) {
+    return normalizeTwoLines(linesOrText);
+  }
+  if (typeof linesOrText === "string" && linesOrText.includes("\n")) {
+    return normalizeTwoLines(linesOrText.split("\n"));
+  }
+  return normalizeTwoLines(["", linesOrText || ""]);
+}
+
+function lineToPinyin(text) {
+  if (!text?.trim()) return "";
+  if (typeof pinyinPro === "undefined" || typeof pinyinPro.pinyin !== "function") {
+    return "";
+  }
+
+  return pinyinPro.pinyin(text, {
+    toneType: "symbol",
+    nonZh: "consecutive",
+  });
+}
+
+function linesToPinyin(lines) {
+  const [l1, l2] = normalizeTwoLines(lines);
+  return [lineToPinyin(l1), lineToPinyin(l2)];
+}
+
 const toggleBtn = document.getElementById("toggleBtn");
 const toggleLabel = document.getElementById("toggleLabel");
 const statusDot = document.getElementById("statusDot");
 const statusText = document.getElementById("statusText");
 const original = new DualLineCaption(document.querySelector('[data-caption="original"]'));
+const pinyin = new DualLineCaption(document.querySelector('[data-caption="pinyin"]'));
 
 let ccSync = false;
 
@@ -62,21 +90,16 @@ async function init() {
       renderToggle();
       if (!ccSync) {
         original.setLines(["", ""]);
+        pinyin.setLines(["", ""]);
       }
     }
   });
 }
 
 function applyOriginal(linesOrText) {
-  if (Array.isArray(linesOrText)) {
-    original.setLines(linesOrText);
-    return;
-  }
-  if (typeof linesOrText === "string" && linesOrText.includes("\n")) {
-    original.setLines(linesOrText.split("\n"));
-    return;
-  }
-  original.setLines(["", linesOrText || ""]);
+  const lines = resolveLines(linesOrText);
+  original.setLines(lines);
+  pinyin.setLines(linesToPinyin(lines));
 }
 
 async function onToggle() {
