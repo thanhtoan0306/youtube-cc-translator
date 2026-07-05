@@ -219,6 +219,12 @@ h2 {
   top: calc(10px + var(--caption-line-height));
 }
 
+.caption-viewport.live.en .caption-line,
+.caption-viewport.live.vi .caption-line {
+  font-size: 7.5px;
+  min-height: var(--caption-line-height);
+}
+
 .caption-viewport.ruby .caption-line {
   height: var(--ruby-row-height);
   display: flex;

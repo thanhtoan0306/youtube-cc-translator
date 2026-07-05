@@ -160,6 +160,10 @@ function applyCaption(linesOrText) {
   const lines = resolveLines(linesOrText);
   live.setLines(lines);
   pinyin.setLines(lines);
+  if (!lines[0] && !lines[1]) {
+    english.setLines(["", ""]);
+    vietnamese.setLines(["", ""]);
+  }
 }
 
 function applyTranslation(entry) {

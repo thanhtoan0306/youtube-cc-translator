@@ -94,6 +94,14 @@ async function translateCaptionLines(lines, tabId) {
 
   await chrome.storage.local.set({ lastCaption: entry });
   chrome.runtime.sendMessage({ type: "CAPTION_TRANSLATED", payload: entry }).catch(() => {});
+
+  const targetTabId =
+    tabId ?? (await chrome.tabs.query({ active: true, currentWindow: true }))[0]?.id;
+  if (targetTabId) {
+    chrome.tabs
+      .sendMessage(targetTabId, { type: "CAPTION_TRANSLATED", payload: entry })
+      .catch(() => {});
+  }
 }
 
 function normalizeLines(lines, text) {

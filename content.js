@@ -1,5 +1,7 @@
 let autoTranslate = false;
 let lastSeenText = "";
+let lastTranslationTs = 0;
+let overlayShowsLine2 = false;
 let observer = null;
 
 init();
@@ -8,7 +10,7 @@ async function init() {
   if (window.__yccInitialized) return;
   window.__yccInitialized = true;
 
-  const stored = await chrome.storage.local.get(["autoTranslate"]);
+  const stored = await chrome.storage.local.get(["autoTranslate", "lastCaption"]);
   autoTranslate = Boolean(stored.autoTranslate);
 
   injectStyles();
@@ -17,6 +19,16 @@ async function init() {
   startCaptionObserver();
   watchPlayerMount();
 
+  if (autoTranslate && stored.lastCaption) {
+    const lines = stored.lastCaption.originalLines;
+    if (lines) {
+      updateVideoOverlay(lines);
+    }
+    if (stored.lastCaption.enLines || stored.lastCaption.viLines) {
+      applyOverlayTranslation(stored.lastCaption);
+    }
+  }
+
   chrome.runtime.onMessage.addListener((message) => {
     if (message.type === "AUTO_TRANSLATE_CHANGED") {
       autoTranslate = Boolean(message.enabled);
@@ -24,8 +36,12 @@ async function init() {
       updateInjectedButtonLabel();
       setOverlayVisible(autoTranslate);
       if (!autoTranslate) {
-        updateVideoOverlay(["", ""]);
+        clearVideoOverlay();
       }
+    }
+    if (message.type === "CAPTION_TRANSLATED") {
+      if (!autoTranslate) return;
+      applyOverlayTranslation(message.payload);
     }
   });
 }
@@ -69,17 +85,18 @@ function injectStyles() {
       top: 50%;
       transform: translate(-50%, -50%);
       z-index: 72;
-      max-width: 88%;
+      max-width: 90%;
       width: max-content;
       pointer-events: none;
-      text-align: center;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      gap: 4px;
     }
     #ycc-video-overlay.ycc-hidden {
       display: none;
+    }
+    .ycc-overlay-stack {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 6px;
     }
     #ycc-video-overlay .ycc-overlay-line {
       display: flex;
@@ -123,6 +140,60 @@ function injectStyles() {
     .ycc-ruby-py.empty {
       visibility: hidden;
     }
+    .ycc-overlay-block.en,
+    .ycc-overlay-block.vi {
+      display: flex;
+      flex-direction: column;
+      align-items: stretch;
+      gap: 4px;
+      width: 100%;
+    }
+    .ycc-overlay-block.en .ycc-overlay-text,
+    .ycc-overlay-block.vi .ycc-overlay-text {
+      display: block;
+      margin: 0;
+      padding: 4px 10px;
+      border-radius: 4px;
+      background: rgba(8, 8, 8, 0.82);
+      font: 600 8.5px/1.35 system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      text-shadow: 0 1px 2px rgba(0, 0, 0, 0.9);
+      text-align: left;
+      max-width: 100%;
+      word-break: break-word;
+      box-sizing: border-box;
+      min-height: 0;
+    }
+    .ycc-overlay-block.en .ycc-overlay-text {
+      color: #8ab4f8;
+      box-shadow: inset 0 0 0 1px rgba(66, 133, 244, 0.28);
+    }
+    .ycc-overlay-block.vi .ycc-overlay-text {
+      color: #81c995;
+      font-family: "Segoe UI", "Noto Sans", sans-serif;
+      box-shadow: inset 0 0 0 1px rgba(52, 168, 83, 0.28);
+    }
+    .ycc-overlay-text:not(.ycc-slot-hidden):empty {
+      min-height: 18px;
+      opacity: 0.28;
+    }
+    .ycc-overlay-text.dim {
+      opacity: 0.9;
+      font-size: 8px;
+    }
+    .ycc-overlay-text.dim:not(.ycc-slot-hidden):empty {
+      min-height: 17px;
+      opacity: 0.28;
+    }
+    .ycc-overlay-text.ycc-slot-hidden {
+      display: none !important;
+    }
+    .ycc-overlay-block.pinyin:not(:has(.ycc-overlay-line:not(:empty))) {
+      display: none;
+    }
+    #ycc-video-overlay.ycc-active .ycc-overlay-block.en,
+    #ycc-video-overlay.ycc-active .ycc-overlay-block.vi {
+      display: flex;
+    }
   `;
   document.head.appendChild(style);
 }
@@ -148,8 +219,20 @@ function ensureVideoOverlay() {
     overlay.id = "ycc-video-overlay";
     overlay.className = "ycc-hidden";
     overlay.innerHTML = `
-      <p class="ycc-overlay-line dim" data-line="1"></p>
-      <p class="ycc-overlay-line" data-line="2"></p>
+      <div class="ycc-overlay-stack">
+        <div class="ycc-overlay-block pinyin" data-block="pinyin">
+          <p class="ycc-overlay-line dim" data-pinyin-line="1"></p>
+          <p class="ycc-overlay-line" data-pinyin-line="2"></p>
+        </div>
+        <div class="ycc-overlay-block en" data-block="en">
+          <p class="ycc-overlay-text dim" data-en-line="1"></p>
+          <p class="ycc-overlay-text" data-en-line="2"></p>
+        </div>
+        <div class="ycc-overlay-block vi" data-block="vi">
+          <p class="ycc-overlay-text dim" data-vi-line="1"></p>
+          <p class="ycc-overlay-text" data-vi-line="2"></p>
+        </div>
+      </div>
     `;
     player.appendChild(overlay);
   }
@@ -161,6 +244,7 @@ function setOverlayVisible(visible) {
   const overlay = ensureVideoOverlay();
   if (!overlay) return;
   overlay.classList.toggle("ycc-hidden", !visible);
+  overlay.classList.toggle("ycc-active", visible && autoTranslate);
 }
 
 function updateVideoOverlay(lines) {
@@ -168,13 +252,85 @@ function updateVideoOverlay(lines) {
   if (!overlay || !autoTranslate) return;
 
   const [l1, l2] = normalizeOverlayLines(lines);
-  const line1El = overlay.querySelector('[data-line="1"]');
-  const line2El = overlay.querySelector('[data-line="2"]');
+  const line1El = overlay.querySelector('[data-pinyin-line="1"]');
+  const line2El = overlay.querySelector('[data-pinyin-line="2"]');
   if (!line1El || !line2El) return;
 
   renderOverlayRow(line1El, l1);
   renderOverlayRow(line2El, l2);
-  setOverlayVisible(Boolean(l1 || l2));
+  overlayShowsLine2 = Boolean(l2);
+  syncOverlaySecondLine(overlay, overlayShowsLine2);
+  if (!l1 && !l2) {
+    updateOverlayTranslations(["", ""], ["", ""], Date.now());
+    lastTranslationTs = 0;
+  }
+  refreshOverlayVisibility(overlay);
+}
+
+function applyOverlayTranslation(entry) {
+  if (!entry) return;
+  const ts = entry.timestamp ?? 0;
+  if (ts && ts < lastTranslationTs) return;
+  if (ts) lastTranslationTs = ts;
+  updateOverlayTranslations(entry.enLines, entry.viLines, ts);
+}
+
+function updateOverlayTranslations(enLines, viLines, timestamp = 0) {
+  const overlay = ensureVideoOverlay();
+  if (!overlay || !autoTranslate) return;
+
+  const [en1, en2] = normalizeOverlayLines(enLines);
+  const [vi1, vi2] = normalizeOverlayLines(viLines);
+
+  setOverlayTextLine(overlay, "en", 1, en1);
+  setOverlayTextLine(overlay, "en", 2, en2);
+  setOverlayTextLine(overlay, "vi", 1, vi1);
+  setOverlayTextLine(overlay, "vi", 2, vi2);
+  syncOverlaySecondLine(overlay, overlayShowsLine2 || Boolean(en2) || Boolean(vi2));
+  refreshOverlayVisibility(overlay);
+}
+
+function syncOverlaySecondLine(overlay, showLine2) {
+  for (const lang of ["en", "vi"]) {
+    const line2 = overlay.querySelector(`[data-${lang}-line="2"]`);
+    if (line2) {
+      line2.classList.toggle("ycc-slot-hidden", !showLine2);
+    }
+  }
+}
+
+function setOverlayTextLine(overlay, lang, index, text) {
+  const el = overlay.querySelector(`[data-${lang}-line="${index}"]`);
+  if (el) {
+    el.textContent = text;
+  }
+}
+
+function refreshOverlayVisibility(overlay) {
+  const hasPinyin = [...overlay.querySelectorAll("[data-pinyin-line]")].some(
+    (el) => el.childElementCount > 0
+  );
+  const hasEn = [...overlay.querySelectorAll("[data-en-line]")].some((el) => el.textContent?.trim());
+  const hasVi = [...overlay.querySelectorAll("[data-vi-line]")].some((el) => el.textContent?.trim());
+  setOverlayVisible(hasPinyin || hasEn || hasVi);
+}
+
+function clearVideoOverlay() {
+  lastTranslationTs = 0;
+  overlayShowsLine2 = false;
+  const overlay = ensureVideoOverlay();
+  if (!overlay) return;
+
+  const line1El = overlay.querySelector('[data-pinyin-line="1"]');
+  const line2El = overlay.querySelector('[data-pinyin-line="2"]');
+  if (line1El) renderOverlayRow(line1El, "");
+  if (line2El) renderOverlayRow(line2El, "");
+  setOverlayTextLine(overlay, "en", 1, "");
+  setOverlayTextLine(overlay, "en", 2, "");
+  setOverlayTextLine(overlay, "vi", 1, "");
+  setOverlayTextLine(overlay, "vi", 2, "");
+  syncOverlaySecondLine(overlay, false);
+  setOverlayVisible(false);
 }
 
 function renderOverlayRow(el, text) {
@@ -282,7 +438,7 @@ function handleCaptionChange() {
       lastSeenText = "";
       if (autoTranslate) {
         emitCaptionSync(["", ""], "");
-        updateVideoOverlay(["", ""]);
+        clearVideoOverlay();
       }
     }
     return;
@@ -312,7 +468,7 @@ function injectCcButton() {
   const btn = document.createElement("button");
   btn.id = "ycc-translate-btn";
   btn.type = "button";
-  btn.title = "Sync captions to side panel + Pinyin overlay";
+  btn.title = "Sync captions to side panel + video overlay";
   updateInjectedButtonLabel(btn);
 
   btn.addEventListener("click", async () => {
@@ -332,7 +488,7 @@ function injectCcButton() {
         updateVideoOverlay(twoLines);
       }
     } else {
-      updateVideoOverlay(["", ""]);
+      clearVideoOverlay();
     }
   });
 

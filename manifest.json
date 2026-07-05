@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "YouTube CC Translator",
-  "version": "1.5.1",
+  "version": "1.5.6",
   "description": "YouTube CC sync with side panel translations and centered video overlay.",
   "permissions": ["storage", "sidePanel", "tabs"],
   "host_permissions": [
