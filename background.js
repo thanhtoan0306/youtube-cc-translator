@@ -14,7 +14,7 @@ chrome.sidePanel.setPanelBehavior({ openPanelOnActionClick: true }).catch(() => 
 
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
   if (message.type === "CAPTION_SYNC") {
-    handleCaptionSync(message.payload);
+    handleCaptionSync(message.payload, sender.tab?.id);
     sendResponse({ ok: true });
     return false;
   }
@@ -47,7 +47,7 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
   }
 });
 
-function handleCaptionSync(payload) {
+function handleCaptionSync(payload, tabId) {
   const lines = normalizeLines(payload?.lines, payload?.text);
   const entry = {
     originalLines: lines,
@@ -57,17 +57,17 @@ function handleCaptionSync(payload) {
   chrome.storage.local.set({ lastCaption: entry }).catch(() => {});
   chrome.runtime.sendMessage({ type: "CAPTION_SYNC", payload }).catch(() => {});
 
-  pendingTranslate = lines;
+  pendingTranslate = { lines, tabId };
   clearTimeout(translateDebounceTimer);
   translateDebounceTimer = setTimeout(() => {
     if (pendingTranslate) {
-      translateCaptionLines(pendingTranslate);
+      translateCaptionLines(pendingTranslate.lines, pendingTranslate.tabId);
       pendingTranslate = null;
     }
   }, TRANSLATE_DEBOUNCE_MS);
 }
 
-async function translateCaptionLines(lines) {
+async function translateCaptionLines(lines, tabId) {
   const settings = await chrome.storage.local.get(["autoTranslate"]);
   if (!settings.autoTranslate) return;
 
