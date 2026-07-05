@@ -57,8 +57,7 @@ function readCaptionLines() {
 function toTwoLines(segments) {
   const lines = (segments ?? []).map((line) => line.trim()).filter(Boolean);
   if (!lines.length) return ["", ""];
-  if (lines.length === 1) return ["", lines[0]];
-  return [lines[lines.length - 2], lines[lines.length - 1]];
+  return [lines[0] ?? "", lines[1] ?? ""];
 }
 
 function handleCaptionChange() {

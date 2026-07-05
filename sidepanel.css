@@ -12,6 +12,8 @@
   --vi-font: "Segoe UI", "Noto Sans", sans-serif;
   --caption-line-height: 28px;
   --caption-viewport-height: 76px;
+  --ruby-row-height: 50px;
+  --pinyin-viewport-height: 118px;
 }
 
 * {
@@ -130,7 +132,7 @@ h2 {
   box-shadow: 0 0 8px rgba(62, 165, 93, 0.6);
 }
 
-.caption-block + .caption-block:not(.pinyin-block) {
+.caption-block + .caption-block {
   margin-top: 12px;
 }
 
@@ -143,15 +145,12 @@ h2 {
   letter-spacing: 0.05em;
 }
 
-.caption-viewport.pinyin .caption-line {
-  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
-  font-size: 14px;
-  font-weight: 400;
-  color: #f0c674;
-  letter-spacing: 0.02em;
+.caption-viewport.live {
+  height: var(--caption-viewport-height);
 }
 
-.caption-block.pinyin-block .caption-viewport {
+.caption-viewport.ruby {
+  height: var(--pinyin-viewport-height);
   background: rgba(240, 198, 116, 0.06);
   box-shadow: inset 0 0 0 1px rgba(240, 198, 116, 0.18);
 }
@@ -178,54 +177,77 @@ h2 {
   position: absolute;
   left: 12px;
   right: 12px;
-  height: var(--caption-line-height);
   margin: 0;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.caption-viewport.live .caption-line {
+  height: var(--caption-line-height);
   line-height: var(--caption-line-height);
   font-size: 15px;
   font-weight: 500;
   color: #fff;
   text-align: left;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
 }
 
-.caption-line[data-line="1"] {
+.caption-viewport.live .caption-line[data-line="1"] {
   top: 10px;
   opacity: 0.88;
 }
 
-.caption-line[data-line="2"] {
+.caption-viewport.live .caption-line[data-line="2"] {
   top: calc(10px + var(--caption-line-height));
+}
+
+.caption-viewport.ruby .caption-line {
+  height: var(--ruby-row-height);
+  display: flex;
+  flex-direction: row;
+  flex-wrap: nowrap;
+  justify-content: flex-start;
+  align-items: flex-start;
+}
+
+.caption-viewport.ruby .caption-line[data-line="1"] {
+  top: 10px;
+  opacity: 0.88;
+}
+
+.caption-viewport.ruby .caption-line[data-line="2"] {
+  top: calc(10px + var(--ruby-row-height));
+}
+
+.ruby-col {
+  display: inline-flex;
+  flex: 0 0 auto;
+  flex-direction: column;
+  align-items: flex-start;
+  justify-content: flex-start;
+  min-width: 1.5em;
+  padding-right: 0.12em;
+}
+
+.ruby-han {
+  font: 500 16px/1.25 var(--zh-font);
+  color: #fff;
+}
+
+.ruby-py {
+  margin-top: 2px;
+  font: 400 11px/1.1 ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  color: #f0c674;
+  min-height: 12px;
+}
+
+.ruby-py.empty {
+  visibility: hidden;
 }
 
 .caption-line.filled,
 .caption-line.active {
   opacity: 1;
-}
-
-.caption-viewport.zh .caption-line {
-  font-family: var(--zh-font);
-  font-size: 16px;
-}
-
-.caption-viewport.vi .caption-line {
-  font-family: var(--vi-font);
-}
-
-.caption-block.highlight .caption-viewport {
-  background: rgba(230, 33, 23, 0.08);
-  border: 1px solid rgba(230, 33, 23, 0.25);
-}
-
-.caption-block.accent-en .caption-viewport {
-  background: rgba(66, 133, 244, 0.08);
-  border: 1px solid rgba(66, 133, 244, 0.25);
-}
-
-.caption-block.accent-vi .caption-viewport {
-  background: rgba(52, 168, 83, 0.08);
-  border: 1px solid rgba(52, 168, 83, 0.25);
 }
 
 .footer {

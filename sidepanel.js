@@ -1,4 +1,27 @@
-class DualLineCaption {
+function splitGraphemes(text) {
+  if (!text) return [];
+  if (typeof Intl !== "undefined" && Intl.Segmenter) {
+    return [...new Intl.Segmenter("zh", { granularity: "grapheme" }).segment(text)].map(
+      (part) => part.segment
+    );
+  }
+  return [...text];
+}
+
+function isHanChar(char) {
+  return /[\u3400-\u9fff]/.test(char);
+}
+
+function charToPinyin(char) {
+  if (!char?.trim()) return "";
+  if (!isHanChar(char)) return "";
+  if (typeof pinyinPro === "undefined" || typeof pinyinPro.pinyin !== "function") {
+    return "";
+  }
+  return pinyinPro.pinyin(char, { toneType: "symbol" });
+}
+
+class LiveLineCaption {
   constructor(viewportEl) {
     this.viewport = viewportEl;
     this.line1El = viewportEl.querySelector('[data-line="1"]');
@@ -23,13 +46,59 @@ class DualLineCaption {
   }
 }
 
+class RubyLineCaption {
+  constructor(viewportEl) {
+    this.viewport = viewportEl;
+    this.line1El = viewportEl.querySelector('[data-line="1"]');
+    this.line2El = viewportEl.querySelector('[data-line="2"]');
+    this.line1 = "";
+    this.line2 = "";
+  }
+
+  setLines(lines) {
+    const [l1, l2] = normalizeTwoLines(lines);
+    if (l1 === this.line1 && l2 === this.line2) return;
+
+    this.line1 = l1;
+    this.line2 = l2;
+    this.renderRow(this.line1El, l1);
+    this.renderRow(this.line2El, l2);
+
+    this.line1El.classList.toggle("filled", Boolean(l1));
+    this.line2El.classList.toggle("active", Boolean(l2));
+    this.viewport.classList.toggle("empty", !l1 && !l2);
+  }
+
+  renderRow(el, text) {
+    el.replaceChildren();
+    if (!text) return;
+
+    for (const char of splitGraphemes(text)) {
+      const col = document.createElement("span");
+      col.className = "ruby-col";
+
+      const han = document.createElement("span");
+      han.className = "ruby-han";
+      han.textContent = char;
+
+      const py = document.createElement("span");
+      py.className = "ruby-py";
+      const pyText = charToPinyin(char);
+      py.textContent = pyText;
+      if (!pyText) {
+        py.classList.add("empty");
+      }
+
+      col.append(han, py);
+      el.appendChild(col);
+    }
+  }
+}
+
 function normalizeTwoLines(lines) {
   const l1 = lines?.[0]?.trim() ?? "";
   const l2 = lines?.[1]?.trim() ?? "";
-  if (l1 && l2) return [l1, l2];
-  if (l2) return ["", l2];
-  if (l1) return ["", l1];
-  return ["", ""];
+  return [l1, l2];
 }
 
 function resolveLines(linesOrText) {
@@ -39,32 +108,15 @@ function resolveLines(linesOrText) {
   if (typeof linesOrText === "string" && linesOrText.includes("\n")) {
     return normalizeTwoLines(linesOrText.split("\n"));
   }
-  return normalizeTwoLines(["", linesOrText || ""]);
-}
-
-function lineToPinyin(text) {
-  if (!text?.trim()) return "";
-  if (typeof pinyinPro === "undefined" || typeof pinyinPro.pinyin !== "function") {
-    return "";
-  }
-
-  return pinyinPro.pinyin(text, {
-    toneType: "symbol",
-    nonZh: "consecutive",
-  });
-}
-
-function linesToPinyin(lines) {
-  const [l1, l2] = normalizeTwoLines(lines);
-  return [lineToPinyin(l1), lineToPinyin(l2)];
+  return normalizeTwoLines([linesOrText || "", ""]);
 }
 
 const toggleBtn = document.getElementById("toggleBtn");
 const toggleLabel = document.getElementById("toggleLabel");
 const statusDot = document.getElementById("statusDot");
 const statusText = document.getElementById("statusText");
-const original = new DualLineCaption(document.querySelector('[data-caption="original"]'));
-const pinyin = new DualLineCaption(document.querySelector('[data-caption="pinyin"]'));
+const live = new LiveLineCaption(document.querySelector('[data-caption="live"]'));
+const pinyin = new RubyLineCaption(document.querySelector('[data-caption="pinyin"]'));
 
 let ccSync = false;
 
@@ -76,30 +128,30 @@ async function init() {
   renderToggle();
 
   if (response?.lastCaption?.originalLines) {
-    applyOriginal(response.lastCaption.originalLines);
+    applyCaption(response.lastCaption.originalLines);
   }
 
   toggleBtn.addEventListener("click", onToggle);
 
   chrome.runtime.onMessage.addListener((message) => {
     if (message.type === "CAPTION_SYNC") {
-      applyOriginal(message.payload?.lines ?? message.payload?.text);
+      applyCaption(message.payload?.lines ?? message.payload?.text);
     }
     if (message.type === "AUTO_TRANSLATE_CHANGED") {
       ccSync = Boolean(message.enabled);
       renderToggle();
       if (!ccSync) {
-        original.setLines(["", ""]);
+        live.setLines(["", ""]);
         pinyin.setLines(["", ""]);
       }
     }
   });
 }
 
-function applyOriginal(linesOrText) {
+function applyCaption(linesOrText) {
   const lines = resolveLines(linesOrText);
-  original.setLines(lines);
-  pinyin.setLines(linesToPinyin(lines));
+  live.setLines(lines);
+  pinyin.setLines(lines);
 }
 
 async function onToggle() {

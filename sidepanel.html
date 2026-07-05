@@ -12,7 +12,7 @@
         <span class="logo">CC</span>
         <div>
           <h1>YouTube CC Translator</h1>
-          <p class="subtitle">Synced with YouTube CC — 2 lines</p>
+          <p class="subtitle">Live CC + Pinyin per character</p>
         </div>
       </div>
       <button id="toggleBtn" class="toggle-btn" type="button" aria-pressed="false">
@@ -30,22 +30,22 @@
       <h2>Live Caption</h2>
 
       <div class="caption-block">
-        <div class="caption-viewport yt-style muted" data-caption="original">
-          <p class="caption-line" data-line="1"></p>
-          <p class="caption-line active" data-line="2">Open a YouTube video and enable CC subtitles</p>
+        <div class="caption-viewport live muted" data-caption="live">
+          <p class="caption-line filled" data-line="1">Open a YouTube video and enable CC subtitles</p>
+          <p class="caption-line" data-line="2"></p>
         </div>
       </div>
 
       <div class="caption-block pinyin-block">
         <label>Pinyin</label>
-        <div class="caption-viewport yt-style pinyin" data-caption="pinyin">
+        <div class="caption-viewport ruby" data-caption="pinyin">
           <p class="caption-line" data-line="1"></p>
-          <p class="caption-line active" data-line="2"></p>
+          <p class="caption-line" data-line="2"></p>
         </div>
       </div>
     </section>
 
-    <footer class="footer">Mirrors YouTube CC in real time</footer>
+    <footer class="footer">Live CC unchanged — Pinyin shown separately below</footer>
 
     <script src="pinyin-pro.js"></script>
     <script src="sidepanel.js"></script>
