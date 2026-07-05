@@ -1,5 +1,6 @@
 const CACHE_MAX = 600;
 const translationCache = new Map();
+let updateSeq = 0;
 
 const TARGET_LANGS = {
   zh: "zh-CN",
@@ -37,6 +38,9 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
   if (message.type === "SET_AUTO_TRANSLATE") {
     const enabled = Boolean(message.enabled);
     chrome.storage.local.set({ autoTranslate: enabled }).then(() => {
+      if (!enabled) {
+        chrome.storage.local.remove("lastCaption");
+      }
       broadcastToTabs({ type: "AUTO_TRANSLATE_CHANGED", enabled });
       chrome.runtime
         .sendMessage({ type: "AUTO_TRANSLATE_CHANGED", enabled })
@@ -51,14 +55,19 @@ async function handleCaptionUpdate(payload, tabId) {
   const lines = normalizeLines(payload);
   if (!lines.length) return;
 
-  const settings = await chrome.storage.local.get(["autoTranslate"]);
+  const settings = await chrome.storage.local.get(["autoTranslate", "lastCaption"]);
   if (!settings.autoTranslate) return;
 
+  const seq = ++updateSeq;
+  const prev = settings.lastCaption ?? {};
+
   const [translatedZhLines, translatedEnLines, translatedViLines] = await Promise.all([
-    translateLines(lines, TARGET_LANGS.zh),
-    translateLines(lines, TARGET_LANGS.en),
-    translateLines(lines, TARGET_LANGS.vi),
+    translateLinesIncremental(prev.originalLines, lines, prev.translatedZhLines, TARGET_LANGS.zh),
+    translateLinesIncremental(prev.originalLines, lines, prev.translatedEnLines, TARGET_LANGS.en),
+    translateLinesIncremental(prev.originalLines, lines, prev.translatedViLines, TARGET_LANGS.vi),
   ]);
+
+  if (seq !== updateSeq) return;
 
   const entry = {
     originalLines: lines,
@@ -83,12 +92,44 @@ function normalizeLines(payload) {
   return [];
 }
 
-async function translateLines(lines, targetLang) {
-  return Promise.all(lines.map((line) => translateText(line, targetLang)));
+async function translateLinesIncremental(prevLines, newLines, prevTranslated, targetLang) {
+  const previous = prevLines ?? [];
+  const translated = prevTranslated ?? [];
+  const result = [];
+
+  for (let i = 0; i < newLines.length; i++) {
+    result.push(
+      await translateLineIncremental(previous[i] ?? "", newLines[i], translated[i] ?? "", targetLang)
+    );
+  }
+
+  return result;
+}
+
+async function translateLineIncremental(prevLine, newLine, prevTranslated, targetLang) {
+  if (!newLine) return prevTranslated;
+
+  if (newLine === prevLine) {
+    if (prevTranslated) return prevTranslated;
+    return translateText(newLine, targetLang);
+  }
+
+  if (prevLine && newLine.startsWith(prevLine)) {
+    const delta = newLine.slice(prevLine.length);
+    if (!delta) return prevTranslated;
+
+    const translatedDelta = await translateText(delta, targetLang);
+    return (prevTranslated || "") + translatedDelta;
+  }
+
+  return translateText(newLine, targetLang);
 }
 
 async function translateText(text, targetLang) {
-  const key = `${targetLang}:${text.trim()}`;
+  const trimmed = text.trim();
+  if (!trimmed) return "";
+
+  const key = `${targetLang}:${trimmed}`;
   if (translationCache.has(key)) {
     return translationCache.get(key);
   }
@@ -98,7 +139,7 @@ async function translateText(text, targetLang) {
   url.searchParams.set("sl", "auto");
   url.searchParams.set("tl", targetLang);
   url.searchParams.set("dt", "t");
-  url.searchParams.set("q", text.trim());
+  url.searchParams.set("q", trimmed);
 
   const response = await fetch(url.toString());
   if (!response.ok) {

@@ -157,41 +157,42 @@ h2 {
   color: var(--muted);
 }
 
-.caption-track {
-  display: flex;
-  flex-direction: column;
-  transition: transform var(--roll-duration) cubic-bezier(0.4, 0, 0.2, 1);
-  will-change: transform;
-}
-
-.caption-track.shift {
-  transform: translateY(calc(-1 * var(--caption-line-height)));
-}
-
 .caption-line {
+  position: absolute;
+  left: 12px;
+  right: 12px;
   height: var(--caption-line-height);
   line-height: var(--caption-line-height);
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
-  opacity: 0.72;
-  transition: opacity 0.32s ease;
+  transition: none;
+  contain: layout style;
 }
 
-.caption-line[data-slot="1"].filled {
+.caption-line[data-slot="1"] {
+  top: 10px;
   opacity: 0.88;
 }
 
-.caption-line[data-slot="2"].active {
+.caption-line[data-slot="2"] {
+  top: calc(10px + var(--caption-line-height));
   opacity: 1;
 }
 
-.caption-line.fade-out {
-  opacity: 0 !important;
+.caption-line[data-slot="1"].fade-out {
+  transition: opacity 0.35s ease;
+  opacity: 0;
 }
 
-.caption-line.fade-in {
+.caption-line[data-slot="1"].fade-in {
   animation: line-fade-in 0.28s ease forwards;
+}
+
+.caption-line[data-slot="2"].slide-up {
+  transition: transform var(--roll-duration) cubic-bezier(0.4, 0, 0.2, 1);
+  transform: translateY(calc(-1 * var(--caption-line-height)));
+  z-index: 2;
 }
 
 @keyframes line-fade-in {
