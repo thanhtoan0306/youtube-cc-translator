@@ -117,6 +117,8 @@ const statusDot = document.getElementById("statusDot");
 const statusText = document.getElementById("statusText");
 const live = new LiveLineCaption(document.querySelector('[data-caption="live"]'));
 const pinyin = new RubyLineCaption(document.querySelector('[data-caption="pinyin"]'));
+const english = new LiveLineCaption(document.querySelector('[data-caption="en"]'));
+const vietnamese = new LiveLineCaption(document.querySelector('[data-caption="vi"]'));
 
 let ccSync = false;
 
@@ -127,8 +129,9 @@ async function init() {
   ccSync = Boolean(response?.autoTranslate);
   renderToggle();
 
-  if (response?.lastCaption?.originalLines) {
+  if (response?.lastCaption) {
     applyCaption(response.lastCaption.originalLines);
+    applyTranslation(response.lastCaption);
   }
 
   toggleBtn.addEventListener("click", onToggle);
@@ -137,12 +140,17 @@ async function init() {
     if (message.type === "CAPTION_SYNC") {
       applyCaption(message.payload?.lines ?? message.payload?.text);
     }
+    if (message.type === "CAPTION_TRANSLATED") {
+      applyTranslation(message.payload);
+    }
     if (message.type === "AUTO_TRANSLATE_CHANGED") {
       ccSync = Boolean(message.enabled);
       renderToggle();
       if (!ccSync) {
         live.setLines(["", ""]);
         pinyin.setLines(["", ""]);
+        english.setLines(["", ""]);
+        vietnamese.setLines(["", ""]);
       }
     }
   });
@@ -152,6 +160,15 @@ function applyCaption(linesOrText) {
   const lines = resolveLines(linesOrText);
   live.setLines(lines);
   pinyin.setLines(lines);
+}
+
+function applyTranslation(entry) {
+  if (entry?.enLines) {
+    english.setLines(entry.enLines);
+  }
+  if (entry?.viLines) {
+    vietnamese.setLines(entry.viLines);
+  }
 }
 
 async function onToggle() {

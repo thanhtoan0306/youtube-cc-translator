@@ -12,7 +12,7 @@
         <span class="logo">CC</span>
         <div>
           <h1>YouTube CC Translator</h1>
-          <p class="subtitle">Live CC + Pinyin per character</p>
+          <p class="subtitle">Live CC · Pinyin · English · Vietnamese</p>
         </div>
       </div>
       <button id="toggleBtn" class="toggle-btn" type="button" aria-pressed="false">
@@ -43,9 +43,25 @@
           <p class="caption-line" data-line="2"></p>
         </div>
       </div>
+
+      <div class="caption-block en-block">
+        <label>English</label>
+        <div class="caption-viewport live en" data-caption="en">
+          <p class="caption-line" data-line="1"></p>
+          <p class="caption-line" data-line="2"></p>
+        </div>
+      </div>
+
+      <div class="caption-block vi-block">
+        <label>Vietnamese</label>
+        <div class="caption-viewport live vi" data-caption="vi">
+          <p class="caption-line" data-line="1"></p>
+          <p class="caption-line" data-line="2"></p>
+        </div>
+      </div>
     </section>
 
-    <footer class="footer">Live CC unchanged — Pinyin shown separately below</footer>
+    <footer class="footer">Live CC mirrors YouTube — other sections derived from it</footer>
 
     <script src="pinyin-pro.js"></script>
     <script src="sidepanel.js"></script>

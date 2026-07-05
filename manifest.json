@@ -1,8 +1,8 @@
 {
   "manifest_version": 3,
   "name": "YouTube CC Translator",
-  "version": "1.3.3",
-  "description": "Mirror YouTube CC in the side panel with live Pinyin for Chinese captions.",
+  "version": "1.4.0",
+  "description": "Mirror YouTube CC with Pinyin, English, and Vietnamese in the side panel.",
   "permissions": ["storage", "sidePanel", "tabs"],
   "host_permissions": [
     "*://www.youtube.com/*",
