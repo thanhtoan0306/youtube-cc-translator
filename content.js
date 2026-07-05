@@ -82,7 +82,7 @@ function injectStyles() {
     #ycc-video-overlay {
       position: absolute;
       left: 50%;
-      top: 50%;
+      top: 75%;
       transform: translate(-50%, -50%);
       z-index: 72;
       max-width: 90%;
